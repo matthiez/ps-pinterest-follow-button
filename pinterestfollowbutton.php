@@ -96,7 +96,7 @@ class PinterestFollowButton extends Module
      * @return string
      */
     public function displayForm() {
-        $default_lang = (int)Configuration::get('PS_LANG_DEFAULT');
+        $default_lang = Configuration::get('PS_LANG_DEFAULT');
         $helper = new HelperForm();
         $helper->module = $this;
         $helper->name_controller = $this->name;
