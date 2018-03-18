@@ -25,15 +25,17 @@ class PinterestFollowButton extends Module
     public function __construct() {
         $this->name = 'pinterestfollowbutton';
         $this->tab = 'front_office_features';
-        $this->version = '1.0.2';
+        $this->version = '1.0.3';
         $this->author = 'Andre Matthies';
         $this->need_instance = 0;
         $this->bootstrap = true;
-        
+
         parent::__construct();
-        
+
         $this->displayName = $this->l('Pinterest Follow Button');
         $this->description = $this->l('Adds a block with Pinterest Follow Button.');
+
+        $this->__moduleDir = dirname(__FILE__);
     }
 
     /**
@@ -42,8 +44,12 @@ class PinterestFollowButton extends Module
      */
     public function install() {
         if (Shop::isFeatureActive()) Shop::setContext(Shop::CONTEXT_ALL);
-        return parent::install()
-            && $this->installConfig()
+
+        if (!parent::install()) return false;
+
+        foreach ($this->config as $k => $v) Configuration::updateValue($k, $v);
+
+        return $this->registerHook('actionAdminControllerSetMedia')
             && $this->registerHook('displayFooter');
     }
 
@@ -51,124 +57,38 @@ class PinterestFollowButton extends Module
      * @return bool
      */
     public function uninstall() {
-        return parent::uninstall()
-            && $this->removeConfig();
-    }
+        parent::uninstall();
 
-    /**
-     * @return bool
-     */
-    private function installConfig() {
-        foreach ($this->config as $k => $v) Configuration::updateValue($k, $v);
+        foreach ($this->config as $k) Configuration::deleteByName($k);
+
         return true;
-    }
-
-    /**
-     * @return bool
-     */
-    private function removeConfig() {
-        foreach ($this->config as $k => $v) Configuration::deleteByName($k);
-        return true;
-    }
-
-    /**
-     * @return array
-     * @throws PrestaShopException
-     */
-    public function getConfig() {
-        return Configuration::getMultiple(array_keys($this->config));
     }
 
     /**
      * @return string
      */
     public function getContent() {
+        require_once $this->__moduleDir . '/backendhelperform.php';
+
         $output = null;
-        if (Tools::isSubmit('submitpinterestfollowbutton')) {
-            foreach (Tools::getValue('config') as $key => $value) Configuration::updateValue($key, $value);
-            if ($this->errors) $output .= $this->displayError(implode($this->errors, '<br/>'));
+
+        if (Tools::isSubmit('submit' . $this->name)) {
+            foreach (Tools::getValue('config') as $k => $v) Configuration::updateValue($k, $v);
+            if ($this->errors) $output .= $this->displayError(implode($this->errors, '<br>'));
             else $output .= $this->displayConfirmation($this->l('Settings updated'));
         }
-        return $output . $this->displayForm();
+
+        return $output . (new BackendHelperForm($this->name))->generate();
     }
 
     /**
      * @return string
+     * @throws PrestaShopException
      */
-    public function displayForm() {
-        $default_lang = Configuration::get('PS_LANG_DEFAULT');
-        $helper = new HelperForm();
-        $helper->module = $this;
-        $helper->name_controller = $this->name;
-        $helper->token = Tools::getAdminTokenLite('AdminModules');
-        $helper->currentIndex = AdminController::$currentIndex . '&configure=' . $this->name;
-        $helper->default_form_language = $default_lang;
-        $helper->allow_employee_form_lang = $default_lang;
-        $helper->title = $this->displayName;
-        $helper->show_toolbar = true;
-        $helper->toolbar_scroll = true;
-        $helper->submit_action = 'submit' . $this->name;
-        $helper->toolbar_btn = [
-            'save' =>
-                [
-                    'desc' => $this->l('Save'),
-                    'href' => AdminController::$currentIndex . '&configure=' . $this->name . '&save' . $this->name .
-                        '&token=' . Tools::getAdminTokenLite('AdminModules'),
-                ],
-            'back' => [
-                'href' => AdminController::$currentIndex . '&token=' . Tools::getAdminTokenLite('AdminModules'),
-                'desc' => $this->l('Back to list')
-            ]
-        ];
-        $helper->fields_value['config[PINTEREST_FOLLOW_BUTTON]'] = Configuration::get('PINTEREST_FOLLOW_BUTTON');
-        $helper->fields_value['config[PINTEREST_FOLLOW_BUTTON_PROFILE_URL]'] = Configuration::get('PINTEREST_FOLLOW_BUTTON_PROFILE_URL');
-        $helper->fields_value['config[PINTEREST_FOLLOW_BUTTON_PROFILE_NAME]'] = Configuration::get('PINTEREST_FOLLOW_BUTTON_PROFILE_NAME');
-        return $helper->generateForm([ [ 'form' => [
-                'legend' => [
-                    'title' => $this->l('Settings'),
-                    'icon' => 'icon-cogs'
-                ],
-                'input' => [
-                    [
-                        'type' => 'switch',
-                        'name' => 'config[PINTEREST_FOLLOW_BUTTON]',
-                        'label' => $this->l('Enable Follow Button?'),
-                        'hint' => $this->l('The follow button lets Pinners easily follow your business’s Pinterest page.'),
-                        'is_bool' => true,
-                        'required' => false,
-                        'values' => [
-                            [
-                                'id' => 'follow_button_on',
-                                'value' => 1,
-                                'label' => $this->l('Yes')
-                            ],
-                            [
-                                'id' => 'follow_button_off',
-                                'value' => 0,
-                                'label' => $this->l('No')
-                            ]
-                        ]
-                    ],
-                    [
-                        'type' => 'text',
-                        'name' => 'config[PINTEREST_FOLLOW_BUTTON_PROFILE_URL]',
-                        'label' => $this->l('Profile URL'),
-                        'hint' => 'The Pinterest URL the follow button should refer to.',
-                        'required' => false
-                    ],
-                    [
-                        'type' => 'text',
-                        'name' => 'config[PINTEREST_FOLLOW_BUTTON_PROFILE_NAME]',
-                        'label' => $this->l('Profile Name'),
-                        'hint' => 'The Pinterest username the follow button should refer to.',
-                        'required' => false
-                    ],
-                ],
-                'submit' => [
-                    'title' => $this->l('Save'),
-                    'class' => 'btn btn-default pull-right'
-                ]
-            ] ] ]);
+    public function hookDisplayFooter() {
+        $this->context->smarty->assign(Configuration::getMultiple(array_keys($this->config)));
+        if (Configuration::get('PINTEREST_FOLLOW_BUTTON')) $this->context->controller->addJS('//assets.pinterest.com/js/pinit.js');
+        return $this->display(__FILE__, $this->name . '.tpl');
     }
 
     /**
@@ -200,12 +120,10 @@ class PinterestFollowButton extends Module
     }
 
     /**
-     * @return string
-     * @throws PrestaShopException
+     *
      */
-    public function hookDisplayFooter() {
-        $this->context->smarty->assign($this->getConfig());
-        if (Configuration::get('PINTEREST_FOLLOW_BUTTON')) $this->context->controller->addJS('//assets.pinterest.com/js/pinit.js');
-        return $this->display(__FILE__, 'pinterestfollowbutton.tpl');
+    public function hookActionAdminControllerSetMedia() {
+        $this->context->controller->addJqueryPlugin('validate');
+        $this->context->controller->addJS($this->__moduleDir . '/views/js/backend.js');
     }
 }
