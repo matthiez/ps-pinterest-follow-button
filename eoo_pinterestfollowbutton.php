@@ -17,7 +17,7 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
-class Eoo_Pinterestfollowbutton extends Module
+class Eoo_PinterestFollowButton extends Module
 {
     protected $errors = array();
 
@@ -29,15 +29,16 @@ class Eoo_Pinterestfollowbutton extends Module
 
     public function __construct()
     {
+        $this->__moduleDir = dirname(__FILE__);
+        $this->author = 'Andre Matthies';
+        $this->bootstrap = true;
+        $this->description = $this->l('Adds a block with Pinterest Follow Button.');
+        $this->displayName = $this->l('Pinterest Follow Button');
         $this->name = 'eoo_pinterestfollowbutton';
+        $this->need_instance = 0;
+        $this->ps_versions_compliancy = array('min' => '1.6', 'max' => _PS_VERSION_);
         $this->tab = 'front_office_features';
         $this->version = '1.0.4';
-        $this->author = 'Andre Matthies';
-        $this->need_instance = 0;
-        $this->bootstrap = true;
-        $this->displayName = $this->l('Pinterest Follow Button');
-        $this->description = $this->l('Adds a block with Pinterest Follow Button.');
-        $this->__moduleDir = dirname(__FILE__);
 
         parent::__construct();
     }
@@ -132,7 +133,7 @@ class Eoo_Pinterestfollowbutton extends Module
 
     public function hookActionFrontControllerSetMedia()
     {
-        if (true === (bool)Configuration::get('EOO_PINTEREST_FOLLOW_BUTTON')) {
+        if (Configuration::get('EOO_PINTEREST_FOLLOW_BUTTON')) {
             $this->context->controller->registerJavascript(
                 'eoo-pinterest-pinit',
                 "https://assets.pinterest.com/js/pinit_main.js",
