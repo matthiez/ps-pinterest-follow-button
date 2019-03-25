@@ -45,7 +45,7 @@ class Eoo_Pinterestfollowbutton extends Module
     /**
      * @throws PrestaShopException
      */
-    public function install(): bool
+    public function install()
     {
         if (Shop::isFeatureActive()) {
             Shop::setContext(Shop::CONTEXT_ALL);
@@ -64,7 +64,7 @@ class Eoo_Pinterestfollowbutton extends Module
             && $this->registerHook('displayFooter');
     }
 
-    public function uninstall(): bool
+    public function uninstall()
     {
         parent::uninstall();
 
@@ -75,7 +75,7 @@ class Eoo_Pinterestfollowbutton extends Module
         return true;
     }
 
-    public function getContent(): string
+    public function getContent()
     {
         require_once $this->__moduleDir . '/backendhelperform.php';
 
@@ -97,40 +97,40 @@ class Eoo_Pinterestfollowbutton extends Module
     /**
      * @throws PrestaShopException
      */
-    public function hookDisplayFooter(): string
+    public function hookDisplayFooter()
     {
         $this->context->smarty->assign(Configuration::getMultiple(array_keys($this->config)));
 
         return $this->display(__FILE__, $this->name . '.tpl');
     }
 
-    public function hookDisplayLeftColumn(): string
+    public function hookDisplayLeftColumn()
     {
         return $this->hookDisplayFooter();
     }
 
-    public function hookDisplayRightColumn(): string
+    public function hookDisplayRightColumn()
     {
         return $this->hookDisplayFooter();
     }
 
-    public function hookDisplayTop(): string
+    public function hookDisplayTop()
     {
         return $this->hookDisplayFooter();
     }
 
-    public function hookDisplayHome(): string
+    public function hookDisplayHome()
     {
         return $this->hookDisplayFooter();
     }
 
-    public function hookActionAdminControllerSetMedia(): void
+    public function hookActionAdminControllerSetMedia()
     {
         $this->context->controller->addJqueryPlugin('validate');
         $this->context->controller->addJS($this->__moduleDir . '/views/js/backend.js');
     }
 
-    public function hookActionFrontControllerSetMedia(): void
+    public function hookActionFrontControllerSetMedia()
     {
         if (true === (bool)Configuration::get('EOO_PINTEREST_FOLLOW_BUTTON')) {
             $this->context->controller->registerJavascript(
